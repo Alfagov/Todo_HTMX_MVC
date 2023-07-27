@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marketplace HTMX & Go - Demo</title>
+    <script src="https://unpkg.com/htmx.org@1.9.4"></script>
+    <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+<!-- Navbar -->
+<nav class="bg-blue-500 py-4">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ul class="flex space-x-4">
+            {{ range .Links }} {{ block "navbar-link" .}}
+            <li>
+                <a href="{{ .URL }}" class="text-white hover:text-gray-200">{{ .Name }}</a>
+            </li>
+            {{ end }} {{ end }}
+        </ul>
+    </div>
+    <a class="button" hx-get="/signout" hx-boost="true">
+        Log out
+    </a>    
+</nav>
+
+<!-- Marketplace Content -->
+<div class="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex space-x-6">
+    <div class="w-1/2">
+        <h1 class="text-2xl font-bold text-gray-900">Product Marketplace</h1>
+        {{ block "marketplace" .}}
+        <ul id="product-list" class="grid grid-cols-{{ .Columns }} gap-4 mt-4">
+            {{ range .Products }} {{ block "product-list-elem" .}}
+            <li id="product-elem-{{ .UUID }}" class="border p-4 rounded-md bg-white shadow">
+                <div class="text-gray-800">{{ .Name }} - {{ .Description }} - ${{ .Price }}</div>
+                <!-- Display the product image -->
+                <img src="{{ .Image }}" alt="{{ .Name }}" class="mt-4 rounded-md">
+                <div class="mt-2 space-x-2">
+                    <button hx-delete="/delete/{{ .UUID }}" hx-target="#product-list" hx-swap="outerHTML" class="text-white bg-red-500 px-2 py-1 rounded">Remove</button>
+                    <button hx-post="/update/{{ .UUID }}" hx-target="#product-elem-{{ .UUID }}" hx-swap="outerHTML" class="text-white bg-green-500 px-2 py-1 rounded">Update</button>
+                </div>
+            </li>
+            {{ end }} {{ end }}
+        </ul>
+        {{ end }}
+    </div>
+
+    <div class="w-1/2">
+        <h1 class="text-2xl font-bold text-gray-900">Add Product</h1>
+
+        <form hx-post="/add/" hx-target="#product-list" hx-swap="beforeend" class="mt-4">
+            <div class="mb-4">
+                <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" name="name" id="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div class="mb-4">
+                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                <input type="text" name="description" id="description" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div class="mb-4">
+                <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+                <input type="number" name="price" id="price" step="0.01" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div>
+                <button type="submit" class="text-white bg-blue-500 px-4 py-2 rounded">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
