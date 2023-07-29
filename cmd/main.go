@@ -15,6 +15,10 @@ type Todo struct {
 	Id     string
 }
 
+type PageData struct {
+	IsAuthenticated bool
+}
+
 var todoList = []Todo{
 	{"Todo 1", "Todo 1 Description", 2, uuid.New().String()},
 	{"Todo 2", "Todo 2 Description", 0, uuid.New().String()},
@@ -25,27 +29,103 @@ func main() {
 
 	r := gin.Default()
 
-	r.LoadHTMLFiles("./templates/main.html")
+	//r.LoadHTMLFiles("./templates/main.html")
+	r.LoadHTMLGlob("templates/*.html")
 
 	r.GET("/", rootHandler)
+	r.GET("/login/", loginPageHandler)
+	r.POST("/login/user", loginUserHandler)
 	r.POST("/add/", addHandler)
 	r.DELETE("/delete/:id", removeHandler)
 	r.POST("/update/:id", updateHandler)
+	r.GET("/logout/", logoutHandler)
+	r.POST("/login/redirect", func(c *gin.Context) {
+		c.Header("HX-Redirect", "/login/")
+		c.HTML(http.StatusOK, "index.html", gin.H{})
+	})
+	r.POST("/register/redirect", func(c *gin.Context) {
+		c.Header("HX-Redirect", "/register/")
+		c.HTML(http.StatusOK, "index.html", gin.H{})
+	})
+	r.GET("/register/", registerPageHandler)
+	r.POST("/register/user", registerUserHandler)
+
+	r.GET("/static/css", func(c *gin.Context) {
+		c.File("./templates/main_tw.css")
+	})
 
 	log.Fatal(r.Run(":8080"))
 
 }
 
 func rootHandler(c *gin.Context) {
-	c.HTML(http.StatusOK, "main.html", gin.H{
-		"title": "Main website",
-		"Todos": todoList,
+
+	token, err := c.Cookie("Authentication")
+	if err == nil && token != "" {
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"title":           "Main website",
+			"Todos":           todoList,
+			"IsAuthenticated": true,
+		})
+	} else {
+		c.HTML(http.StatusOK, "index.html", gin.H{
+			"title": "Main website",
+			"Todos": todoList,
+		})
+	}
+}
+
+func logoutHandler(c *gin.Context) {
+	c.SetCookie("Authentication", "", -1, "/", "localhost", false, true)
+	c.Header("HX-Redirect", "/login/")
+	c.HTML(http.StatusOK, "index.html", gin.H{})
+}
+
+func loginPageHandler(c *gin.Context) {
+	c.Header("HX-Redirect", "/login/")
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"title": "Login Page",
+	})
+}
+
+func registerPageHandler(c *gin.Context) {
+	c.Header("HX-Redirect", "/register/")
+	c.HTML(http.StatusOK, "register.html", gin.H{
+		"title": "Register Page",
+	})
+}
+
+func loginUserHandler(c *gin.Context) {
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+
+	log.Println(username, password)
+
+	c.SetCookie("Authentication", "testToken", 3600, "/", "localhost", false, true)
+	c.Header("HX-Redirect", "/")
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"IsAuthenticated": true,
+	})
+}
+
+func registerUserHandler(c *gin.Context) {
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+	email := c.PostForm("email")
+
+	log.Println(username, password, email)
+
+	c.Header("HX-Redirect", "/login/")
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"title": "Login Page",
 	})
 }
 
 func addHandler(c *gin.Context) {
 	name := c.PostForm("name")
 	desc := c.PostForm("desc")
+
+	log.Println(c.Cookie("Authentication"))
 
 	newElem := Todo{name, desc, 0, uuid.New().String()}
 	todoList = append(todoList, newElem)

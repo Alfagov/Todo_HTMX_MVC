@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTMX & Go - Demo</title>
+    <script src="https://unpkg.com/htmx.org@1.9.4"></script>
+    <link href="https://unpkg.com/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet">
+
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+
+
+<div class="max-w-md w-full bg-white p-8 rounded-lg">
+    <div class="text-center mb-4">
+        <h1 class="text-4xl text-gray-700 font-bold">Login HTML</h1>
+    </div>
+    <form hx-boost="true" hx-post="/login/user" class="space-y-6">
+        <div>
+            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+            <input type="text" name="username" id="username" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black" />
+        </div>
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+            <input type="password" name="password" id="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black" />
+        </div>
+        <div>
+            <button type="submit" class="w-full px-3 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none">Login</button>
+        </div>
+    </form>
+    <div class="text-center mt-3">
+        <button hx-get="/register/" class="px-3 py-2 text-white bg-green-500 rounded-lg hover:bg-green-600 focus:outline-none">
+            Register
+        </button>
+    </div>
+</div>
+
+
+</body>
+</html>
