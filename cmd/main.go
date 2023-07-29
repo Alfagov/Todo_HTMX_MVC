@@ -31,6 +31,7 @@ func main() {
 
 	//r.LoadHTMLFiles("./templates/main.html")
 	r.LoadHTMLGlob("templates/*.html")
+	r.Use(isHTMXMiddleware())
 
 	r.GET("/", rootHandler)
 	r.GET("/login/", loginPageHandler)
@@ -51,11 +52,26 @@ func main() {
 	r.POST("/register/user", registerUserHandler)
 
 	r.GET("/static/css", func(c *gin.Context) {
-		c.File("./templates/main_tw.css")
+		c.File("./templates/css/main_tw.css")
+	})
+	r.GET("/static/js", func(c *gin.Context) {
+		c.File("./templates/js/htmx.org@1.9.4")
 	})
 
 	log.Fatal(r.Run(":8080"))
 
+}
+
+func isHTMXMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetHeader("HX-Request") != "" {
+			c.Set("isHTMX", true)
+		} else {
+			c.Set("isHTMX", false)
+		}
+
+		c.Next()
+	}
 }
 
 func rootHandler(c *gin.Context) {
