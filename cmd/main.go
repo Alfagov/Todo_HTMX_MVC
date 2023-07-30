@@ -1,11 +1,18 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
+	"github.com/Alfagov/Todo_HTMX_MVC/pkg/app"
+	"github.com/Alfagov/Todo_HTMX_MVC/pkg/db"
+	"github.com/Alfagov/Todo_HTMX_MVC/pkg/jwtHelper"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	_ "github.com/libsql/libsql-client-go/libsql"
 )
 
 type Todo struct {
@@ -27,9 +34,19 @@ var todoList = []Todo{
 
 func main() {
 
+	var dbUrl = "http://127.0.0.1:4432"
+	dbConn, err := sql.Open("libsql", dbUrl)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to open db %s: %s", dbUrl, err)
+		os.Exit(1)
+	}
+
 	r := gin.Default()
 
-	//r.LoadHTMLFiles("./templates/main.html")
+	dbDao := db.NewDao(dbConn)
+	application := app.NewApp(dbDao, jwtHelper.NewJWT())
+	application.SetupUserRoutes(r)
+
 	r.LoadHTMLGlob("templates/*.html")
 	r.Use(isHTMXMiddleware())
 
@@ -39,7 +56,6 @@ func main() {
 	r.POST("/add/", addHandler)
 	r.DELETE("/delete/:id", removeHandler)
 	r.POST("/update/:id", updateHandler)
-	r.GET("/logout/", logoutHandler)
 	r.POST("/login/redirect", func(c *gin.Context) {
 		c.Header("HX-Redirect", "/login/")
 		c.HTML(http.StatusOK, "index.html", gin.H{})
@@ -89,12 +105,6 @@ func rootHandler(c *gin.Context) {
 			"Todos": todoList,
 		})
 	}
-}
-
-func logoutHandler(c *gin.Context) {
-	c.SetCookie("Authentication", "", -1, "/", "localhost", false, true)
-	c.Header("HX-Redirect", "/login/")
-	c.HTML(http.StatusOK, "index.html", gin.H{})
 }
 
 func loginPageHandler(c *gin.Context) {
