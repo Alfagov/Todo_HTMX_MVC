@@ -16,9 +16,9 @@ func (a *App) SetupUserRoutes(engine *gin.Engine) {
 
 	users := engine.Group("/users")
 	{
-		users.POST("/register", registerUserHandler(d))
+		users.POST("/register", validateUserWithDB(d), registerUserHandler(d))
 		users.POST("/login", loginUserHandler(d, a.JWT))
-		users.POST("/logout", logoutHandler)
+		users.GET("/logout", logoutHandler)
 		/*users.GET("/me", me)
 		users.GET("/userByName/:name", userByName)
 		users.GET("/userByUsername/:username", userByUsername)*/
@@ -32,27 +32,72 @@ func logoutHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", gin.H{})
 }
 
-func registerUserHandler(database db.Dao) gin.HandlerFunc {
+func validateUserWithDB(database db.Dao) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")
-		password := c.PostForm("password")
 		email := c.PostForm("email")
 		name := c.PostForm("name")
+		password := c.PostForm("password")
 
 		exists, err := database.ExistsUserByUsername(username)
 		if err != nil {
-			log.Println(err)
+			c.Header("HX-Retarget", "#submit-w-error")
+			c.HTML(http.StatusOK, "submit-with-error", gin.H{
+				"ServerError": err.Error(),
+			})
+			return
 		}
 
 		if exists {
-			log.Println("User already exists")
+			c.Header("HX-Retarget", "#username-field")
+			c.HTML(200, "username-form-input", gin.H{
+				"Error":    "Username already taken",
+				"Username": username,
+			})
+			return
 		}
 
-		user := models.CreateUser(username, name, email, password)
-
-		err = database.CreateUser(user)
+		exists, err = database.ExistsUserByEmail(email)
 		if err != nil {
-			log.Println(err)
+			c.Header("HX-Retarget", "#submit-w-error")
+			c.HTML(http.StatusOK, "submit-with-error", gin.H{
+				"ServerError": err.Error(),
+			})
+			return
+		}
+
+		if exists {
+			c.Header("HX-Retarget", "#email-field")
+			c.HTML(200, "email-form-input", gin.H{
+				"Error": "Email already taken",
+				"Email": email,
+			})
+			return
+		}
+
+		c.Set("validuser", models.CreateUser(username, name, email, password))
+		c.Next()
+	}
+}
+
+func registerUserHandler(database db.Dao) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		user, ok := c.Get("validuser")
+		if !ok {
+			c.HTML(http.StatusOK, "register.html", gin.H{
+				"title": "Register Page",
+			})
+			return
+		}
+
+		err := database.CreateUser(user.(*models.User))
+		if err != nil {
+			c.Header("HX-Retarget", "#submit-w-error")
+			c.HTML(http.StatusOK, "submit-with-error", gin.H{
+				"ServerError": err.Error(),
+			})
+			return
 		}
 
 		c.Header("HX-Redirect", "/login/")

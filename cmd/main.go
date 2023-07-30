@@ -46,6 +46,7 @@ func main() {
 	dbDao := db.NewDao(dbConn)
 	application := app.NewApp(dbDao, jwtHelper.NewJWT())
 	application.SetupUserRoutes(r)
+	application.SetupValidationRoutes(r)
 
 	r.LoadHTMLGlob("templates/*.html")
 	r.Use(isHTMXMiddleware())
@@ -73,6 +74,7 @@ func main() {
 	r.GET("/static/js", func(c *gin.Context) {
 		c.File("./templates/js/htmx.org@1.9.4")
 	})
+	r.GET("/modal/", modalPageHandler)
 
 	log.Fatal(r.Run(":8080"))
 
@@ -110,6 +112,12 @@ func rootHandler(c *gin.Context) {
 func loginPageHandler(c *gin.Context) {
 	c.Header("HX-Redirect", "/login/")
 	c.HTML(http.StatusOK, "login.html", gin.H{
+		"title": "Login Page",
+	})
+}
+
+func modalPageHandler(c *gin.Context) {
+	c.HTML(http.StatusOK, "modal_page.html", gin.H{
 		"title": "Login Page",
 	})
 }

@@ -11,6 +11,7 @@ type Dao interface {
 	GetUserByName(name string) (*models.User, error)
 	GetUserByUsername(username string) (*models.User, error)
 	ExistsUserByUsername(username string) (bool, error)
+	ExistsUserByEmail(email string) (bool, error)
 
 	CreateTodoList(todoList *models.TodoList) error
 	GetTodoListByName(name string, userId string) (*models.TodoList, error)
@@ -24,6 +25,17 @@ type DaoImpl struct {
 
 func NewDao(db *sql.DB) Dao {
 	return &DaoImpl{db}
+}
+
+func (d *DaoImpl) ExistsUserByEmail(email string) (bool, error) {
+	err := d.QueryRow("SELECT email FROM users WHERE email = ?;", email).Scan(&email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (d *DaoImpl) LoginUser(username string, password string) (*models.User, error) {
