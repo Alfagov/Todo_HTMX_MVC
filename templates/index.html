@@ -13,8 +13,6 @@
 
   {{ if .IsAuthenticated }}
   {{ template "main.html" . }}
-  {{ else }}
-  <div hx-trigger="load" hx-get="/login/"></div>
   {{ end }}
 
 </body>

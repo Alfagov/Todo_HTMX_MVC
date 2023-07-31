@@ -47,12 +47,13 @@ func main() {
 	application := app.NewApp(dbDao, jwtHelper.NewJWT())
 	application.SetupUserRoutes(r)
 	application.SetupValidationRoutes(r)
+	application.SetupPagesRoutes(r)
 
 	r.LoadHTMLGlob("templates/*.html")
 	r.Use(isHTMXMiddleware())
 
-	r.GET("/", rootHandler)
-	r.GET("/login/", loginPageHandler)
+	//r.GET("/", rootHandler)
+	//r.GET("/login/", loginPageHandler)
 	r.POST("/login/user", loginUserHandler)
 	r.POST("/add/", addHandler)
 	r.DELETE("/delete/:id", removeHandler)
@@ -65,7 +66,7 @@ func main() {
 		c.Header("HX-Redirect", "/register/")
 		c.HTML(http.StatusOK, "index.html", gin.H{})
 	})
-	r.GET("/register/", registerPageHandler)
+	//r.GET("/register/", registerPageHandler)
 	r.POST("/register/user", registerUserHandler)
 
 	r.GET("/static/css", func(c *gin.Context) {
